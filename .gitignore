@@ -1,0 +1,20 @@
+# write all the needed ignores for a C project
+.vscode/
+build/
+*.o
+*.a
+*.so
+*.dylib
+*.dll
+*.exe
+*.out
+*.class
+*.jar
+*.war
+*.ear
+*.zip
+*.tar
+*.gz
+*.bz2
+*.rar
+*.7z
