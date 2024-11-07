@@ -23,6 +23,12 @@ static void mul_backward(Value *out, Value *a, Value *b) {
     b->grad += a->data * out->grad;
 }
 
+static void pow_backward(Value *out, Value *a, Value *b) {
+    float power = b->data;
+    a->grad += power * powf(a->data, power - 1) * out->grad;
+    b->grad += powf(a->data, power) * logf(a->data) * out->data;
+}
+
 static void relu_backward(Value *out, Value *a, Value *b) {
     if (a->data > 0.0f) {
             a->grad += out->grad;
@@ -35,7 +41,7 @@ static void tanh_backward(Value *out, Value *a, Value *b) {
 }
 
 // defining operations 
-Value *value_create(float data) {
+Value *init_value(float data) {
     Value *v = malloc(sizeof(Value));
     v->data = data;
     v->grad = 0.0;
@@ -46,7 +52,7 @@ Value *value_create(float data) {
 }
 
 Value *add(Value *a, Value *b) {
-    Value *out = value_create(a->data + b->data);
+    Value *out = init_value(a->data + b->data);
     out->_prev[0] = a;
     out->_prev[1] = b;
     out->_op = "+";
@@ -55,7 +61,7 @@ Value *add(Value *a, Value *b) {
 }
 
 Value *mul(Value *a, Value *b) {
-    Value *out = value_create(a->data * b->data);
+    Value *out = init_value(a->data * b->data);
     out->_prev[0] = a;
     out->_prev[1] = b;
     out->_op = "*";
@@ -63,8 +69,40 @@ Value *mul(Value *a, Value *b) {
     return out;
 }
 
+Value *power(Value *a, Value *b) { // gotta be power bc pow is a built in function in C
+    Value *out = init_value(powf(a->data, b->data));
+    out->_prev[0] = a;
+    out->_prev[1] = b;
+    out->_op = "**";
+    out->_backward = pow_backward;
+    return out;
+}
+
+Value *neg(Value *a) {
+    Value *minus_one = init_value(-1.0);
+    Value *out = mul(a, minus_one);
+    value_free(minus_one);  
+    return out;
+}
+
+Value *sub(Value *a, Value *b) {
+    Value *neg_b = neg(b);
+    Value *out = add(a, neg_b);
+    value_free(neg_b);  
+    return out;
+}
+
+Value *divide(Value *a, Value *b) {
+    Value *minus_one = init_value(-1.0);
+    Value *power_neg_one = power(b, minus_one);
+    Value *out = mul(a, power_neg_one);
+    value_free(minus_one);     
+    value_free(power_neg_one);
+    return out;
+}
+
 Value *relu(Value *a) {
-    Value *out = value_create(a->data < 0 ? 0 : a->data);
+    Value *out = init_value(a->data < 0 ? 0 : a->data);
     out->_prev[0] = a;
     out->_prev[1] = NULL;
     out->_op = "ReLU";
@@ -77,7 +115,7 @@ Value *tanh_act(Value *a) {
     float exp_x = exp(x);
     float exp_neg_x = exp(-x);
     float tanh_x = (exp_x - exp_neg_x) / (exp_x + exp_neg_x);
-    Value *out = value_create(tanh_x);
+    Value *out = init_value(tanh_x);
     out->_prev[0] = a;
     out->_prev[1] = NULL;
     out->_op = "tanh";
@@ -160,15 +198,15 @@ void value_free(Value *v) {
 
 int main() {
     // inputs x1,x2
-    Value *x1 = value_create(2.0);
-    Value *x2 = value_create(0.0);
+    Value *x1 = init_value(2.0);
+    Value *x2 = init_value(0.0);
     
     // weights w1,w2
-    Value *w1 = value_create(-3.0);
-    Value *w2 = value_create(1.0);
+    Value *w1 = init_value(-3.0);
+    Value *w2 = init_value(1.0);
     
     // bias
-    Value *b = value_create(6.88137);
+    Value *b = init_value(6.88137);
     
     // forward pass: f(x) = relu(w1*x1 + w2*x2 + b)
     Value *x1w1 = mul(x1, w1);
@@ -210,7 +248,6 @@ int main() {
     value_free(x1w1x2w2);
     value_free(n);
     value_free(o);
-    
     return 0;
 }
 
