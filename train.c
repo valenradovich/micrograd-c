@@ -39,7 +39,7 @@ double margin_loss(MLP *model, double X[SIZE][2], int y[SIZE], double *accuracy)
         Value* output = mlp_call(model, inputs);
         
         // compute loss
-        Value* target = init_value(y[i] * 2.0 - 1.0, NULL, 0, "");  // Convert 0/1 to -1/+1
+        Value* target = init_value(y[i] * 2.0 - 1.0, NULL, 0, "");  // converting 0/1 to -1/+1
         Value* margin_loss = relu(add(neg(mul(target, output)), init_value(1.0, NULL, 0, "")));
         total_loss += margin_loss->data;
 
@@ -85,7 +85,7 @@ void train(MLP *model, double X[SIZE][2], int y[SIZE]) {
 
         // updating weights
         double learning_rate = 0.01; //1.0 - (0.9 * epoch / 100.0) -- learning rate decay is not working well
-        Value** params = model->base.parameters((Module*)model);
+        Value **params = model->base.parameters((Module*)model);
         int param_count = model->base.parameters_count((Module*)model);
         for (int i = 0; i < param_count; i++) {
             params[i]->data -= learning_rate * params[i]->grad;
