@@ -80,8 +80,8 @@ double margin_loss(MLP *model, double X[SIZE][2], int y[SIZE], double *accuracy)
 
 void train(MLP *model, double X[SIZE][2], int y[SIZE]) {
     for (int epoch = 0; epoch < 100; epoch++) {
-        double accuracy = 0.0;
-        double avg_loss = margin_loss(model, X, y, &accuracy);
+        double acc = 0.0;
+        double avg_loss = margin_loss(model, X, y, &acc);
 
         // updating weights
         double learning_rate = 0.01; //1.0 - (0.9 * epoch / 100.0) -- learning rate decay is not working well
@@ -92,7 +92,7 @@ void train(MLP *model, double X[SIZE][2], int y[SIZE]) {
         }
         free(params);
 
-        printf("step %d loss %f, accuracy %f%%\n", epoch, avg_loss, accuracy);
+        printf("step %d loss %f, accuracy %f%%\n", epoch, avg_loss, acc);
 
         // zero out gradients for next epoch
         model->base.zero_grad((Module*)model);
